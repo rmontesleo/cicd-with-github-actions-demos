@@ -1,7 +1,7 @@
 on: 
   push:
     branches:
-      - main
+      - 01-basic-nginx-demo
 
 
 jobs:
