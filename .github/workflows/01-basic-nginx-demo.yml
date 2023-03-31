@@ -20,5 +20,5 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${secrets.DOCKER_USERNAME}/cicd-basi-nginx-demo:${{ github.sha }}
+        tags: ${{ secrets.DOCKER_USERNAME }}/cicd-basi-nginx-demo:${{ github.sha }}
     
