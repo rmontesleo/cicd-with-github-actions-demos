@@ -1,0 +1,23 @@
+# You can replace deployment-name, app-name, container-name, repo-name, 
+# and ${ACR_REGISTRY} with your desired names and repository information.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-name
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-name
+  template:
+    metadata:
+      labels:
+        app: app-name
+    spec:
+      containers:
+        - name: container-name
+          imagePullPolicy: Always
+          image: ${ACR_REGISTRY}/repo-name:${{ github.sha }}
+          ports:
+            - containerPort: 80

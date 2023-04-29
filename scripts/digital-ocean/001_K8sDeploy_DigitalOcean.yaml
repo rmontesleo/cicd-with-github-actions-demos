@@ -1,0 +1,42 @@
+# Here is an example workflow using the GitHub Action for DigitalOcean 
+# to build, tag, push a container image to your DigiatlOcean container registry and deploy to a DigitalOcean Kubernetes cluster. 
+# The file named workflow.yaml in the sample GitHub repository defines the triggers, jobs and steps for the workflow.
+
+name: Push-to-Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login to DigitalOcean registry
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          command: registry login
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/<username>/<repository>:latest
+
+      - name: Deploy to DigitalOcean Kubernetes cluster
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          command: kubernetes cluster kubeconfig show <cluster-name> > kubeconfig.yaml
+
+      - name: Deploy to DigitalOcean Kubernetes cluster
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          command: kubectl apply -f kubeconfig.yaml

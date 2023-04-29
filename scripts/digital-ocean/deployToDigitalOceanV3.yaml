@@ -1,0 +1,47 @@
+# This pipeline listens for pushes to the main branch, 
+# logs in to DigitalOcean’s container registry using the digitalocean/digitalocean-container-registry-login-action, 
+# builds a Docker image using a multi-stage Dockerfile and docker/build-push-action, 
+# tags it with the commit SHA, 
+# and pushes it to DigitalOcean’s container registry. 
+# It then installs doctl using the digitalocean/action-doctl action 
+# and deploys the Kubernetes manifests using kubectl apply
+
+
+name: Build and Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Login to DigitalOcean Container Registry
+        uses: digitalocean/digitalocean-container-registry-login-action@v1.0.0
+        with:
+          registry: registry.digitalocean.com
+          username: ${{ secrets.DIGITALOCEAN_REGISTRY_USERNAME }}
+          password: ${{ secrets.DIGITALOCEAN_REGISTRY_PASSWORD }}
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: registry.digitalocean.com/username/repo-name:${{ github.sha }}
+          dockerfile: Dockerfile.multistage
+      
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2.0.0
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      
+      - name: Deploy to DigitalOcean Kubernetes
+        run: |
+          doctl kubernetes cluster kubeconfig save <cluster-name>
+          kubectl apply -f kubernetes/deployment.yaml

@@ -1,0 +1,39 @@
+# You can replace repo-name with your Azure Container Registry repository name and ${{ secrets.ACR_REGISTRY }}, ${{ secrets.ACR_USERNAME }}, and ${{ secrets.ACR_PASSWORD }} with your Azure Container Registry credentials. You can also replace cluster-name, us-south, and deployment.yaml with your desired values.
+# Make sure you have created an IBM Kubernetes Service cluster and have set up the necessary credentials in your GitHub repository secrets
+
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.ACR_REGISTRY }}/repo-name:${{ github.sha }}
+      - name: Login to IBM Cloud
+        uses: IBM-Cloud/ibm-cloud-github-actions@v1.0.0
+        with:
+          ibm-cloud-api-key: ${{ secrets.IBM_CLOUD_API_KEY }}
+          ibm-cloud-region: us-south
+      - name: Configure kubectl
+        run: |
+          ibmcloud ks cluster config --cluster cluster-name
+      - name: Deploy to IBM Kubernetes Service
+        run: |
+          kubectl apply -f deployment.yaml
